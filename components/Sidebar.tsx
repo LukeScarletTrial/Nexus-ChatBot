@@ -33,12 +33,20 @@ const Sidebar: React.FC<SidebarProps> = ({ user, currentView, setView, onLogout 
           API Access
         </button>
 
+        <button 
+          onClick={() => setView('test-request')}
+          className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-200 flex items-center gap-3 ${currentView === 'test-request' ? 'bg-nexus-panel text-pink-400' : 'text-gray-400 hover:bg-nexus-dark hover:text-white'}`}
+        >
+          <i className="fas fa-flask"></i>
+          Test Request
+        </button>
+
          <button 
           onClick={() => setView('sandbox')}
           className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-200 flex items-center gap-3 ${currentView === 'sandbox' ? 'bg-nexus-panel text-green-400' : 'text-gray-400 hover:bg-nexus-dark hover:text-white'}`}
         >
           <i className="fas fa-terminal"></i>
-          API Sandbox
+          Raw Sandbox
         </button>
       </nav>
 

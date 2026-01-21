@@ -7,11 +7,12 @@ import Sidebar from './components/Sidebar';
 import ChatInterface from './components/ChatInterface';
 import ApiDashboard from './components/ApiDashboard';
 import ApiSandbox from './components/ApiSandbox';
+import TestRequest from './components/TestRequest';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [currentView, setCurrentView] = useState('chat'); // 'chat', 'api', 'sandbox'
+  const [currentView, setCurrentView] = useState('chat'); // 'chat', 'api', 'sandbox', 'test-request'
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser: User | null) => {
@@ -62,13 +63,14 @@ const App: React.FC = () => {
             <span className="font-bold text-nexus-accent">NEXUS</span>
             <div className="flex gap-2">
                 <button onClick={() => setCurrentView('chat')} className="p-2 text-xs bg-white/5 rounded">Chat</button>
-                <button onClick={() => setCurrentView('api')} className="p-2 text-xs bg-white/5 rounded">Keys</button>
+                <button onClick={() => setCurrentView('test-request')} className="p-2 text-xs bg-white/5 rounded">Test</button>
             </div>
         </div>
 
         {currentView === 'chat' && <ChatInterface />}
         {currentView === 'api' && <ApiDashboard user={user} />}
         {currentView === 'sandbox' && <ApiSandbox />}
+        {currentView === 'test-request' && <TestRequest user={user} />}
       </main>
     </div>
   );

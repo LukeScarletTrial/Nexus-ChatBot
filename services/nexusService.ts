@@ -16,28 +16,28 @@ Image Generation: If the user asks for an image, acknowledge it.
 
 const INFINITE_PERSPECTIVE_INSTRUCTION = `
 You are Nexus (Model: Infinite Perspective).
-Your primary function is to synthesize vast amounts of information into structured, presentation-ready formats.
-Output Requirement: You MUST return responses in structured JSON format whenever possible.
+Your primary function is to synthesize vast amounts of information into structured, presentation-ready JSON formats.
 
-IMPORTANT: If the user asks for a presentation, deck, or slides, you MUST strictly follow this JSON schema wrapped in an array:
-[
-  {
-    "presentation_metadata": {
-      "title": "Title Here",
-      "author": "Nexus (Infinite Perspective)",
-      "theme": "Theme Description",
-      "objective": "Objective Here"
-    },
-    "slides": [
-      {
-        "slide_number": 1,
-        "header": "Slide Header",
-        "content": ["Point 1", "Point 2"],
-        "visual_prompt": "Description of visual"
-      }
-    ]
-  }
-]
+IMPORTANT: If the user asks for a presentation, deck, or slides, you MUST provide the output as a raw JSON object.
+
+Structure:
+{
+  "presentation_metadata": {
+    "title": "Presentation Title",
+    "author": "Nexus AI",
+    "theme": "Cyberpunk/Corporate/etc",
+    "objective": "Summary of objective"
+  },
+  "slides": [
+    {
+      "slide_number": 1,
+      "header": "Slide Header",
+      "content": ["Point 1", "Point 2"],
+      "visual_prompt": "Description for image generation"
+    }
+  ]
+}
+
 Tone: Objective, analytical, expansive, visionary.
 `;
 
@@ -63,9 +63,8 @@ export const nexusBrain = {
     }
 
     // 3. Standard Text Generation
-    const modelName = modelType === NexusModel.MALEVOLENT 
-      ? 'gemini-3-pro-preview' 
-      : 'gemini-3-flash-preview';
+    // SWITCHED TO FLASH FOR SPEED (User Request: "takes years to respond")
+    const modelName = 'gemini-3-flash-preview';
 
     const systemInstruction = modelType === NexusModel.MALEVOLENT 
       ? MALEVOLENT_INSTRUCTION 
@@ -76,14 +75,14 @@ export const nexusBrain = {
       ...configOverrides
     };
 
+    // Enforce JSON for Infinite Perspective
     if (modelType === NexusModel.INFINITE_PERSPECTIVE) {
       config.responseMimeType = "application/json";
     }
 
     try {
-      // Convert history to compatible format if using Chat, 
-      // but for single turn simplicity in this specific structure we might use generateContent
-      // However, let's use a fresh chat for context if history is provided
+      let responseText = "";
+      
       if (history.length > 0) {
          const chat = ai.chats.create({
             model: modelName,
@@ -91,21 +90,23 @@ export const nexusBrain = {
             history: history
          });
          const result = await chat.sendMessage({ message });
-         return {
-           text: result.text,
-           type: modelType === NexusModel.INFINITE_PERSPECTIVE ? 'json' : 'text'
-         };
+         responseText = result.text || "";
       } else {
         const response = await ai.models.generateContent({
           model: modelName,
           contents: message,
           config: config
         });
-        return {
-          text: response.text,
-          type: modelType === NexusModel.INFINITE_PERSPECTIVE ? 'json' : 'text'
-        };
+        responseText = response.text || "";
       }
+
+      // Determine return type based on model
+      const type = modelType === NexusModel.INFINITE_PERSPECTIVE ? 'json' : 'text';
+
+      return {
+        text: responseText,
+        type: type
+      };
 
     } catch (error) {
       console.error("Nexus Brain Error:", error);
@@ -147,11 +148,6 @@ export const nexusBrain = {
           parts: [{ text: prompt }]
         }
       });
-      
-      // Extract image
-      // Note: The prompt implies returning XML or Link. 
-      // Since we get base64, we will return a structured object we can render.
-      // If accessed via API, we'd return XML.
       
       let imageUrl = '';
       for (const part of response.candidates?.[0]?.content?.parts || []) {
